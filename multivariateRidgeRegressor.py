@@ -8,7 +8,7 @@ def multivariateRidgeRegression(X,y,alpha):
     
     - calculates vector which minimizes the error function of multivariate regression
     
-    - regulates complexity using L_2 norma as regulation parameter
+    - regulates complexity using L_2 norm as regulation parameter
     
     - returns optimal regression vector
     
