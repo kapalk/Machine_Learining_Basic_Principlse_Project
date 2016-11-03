@@ -1,2 +1,2 @@
-# Machine_Learining_Basic_Principlse_Project
+# Machine_Learning_Basic_Principles_Project
 Supervised learning project on Yelp dataset
