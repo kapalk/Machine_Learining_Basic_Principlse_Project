@@ -15,7 +15,7 @@ class LogisticRegression():
         features = np.ones((X.shape[0], X.shape[1] + 1))
         features[:,1:] = X
         labels = np.squeeze(y)
-        self.theta = fmin_bfgs(self.cost, self.theta, fprime=self.gradient, args=(features, labels))
+        self.theta = fmin_bfgs(self.cost, theta, fprime=self.gradient, args=(features, labels))
         self.fitted = True
         print('Prediction Model Created.')
 
@@ -50,5 +50,4 @@ class LogisticRegression():
     def gradient(self, theta, X, y):
         error = self.sigmoid(theta, X) - y
         return error.T.dot(X) / y.size
-
 
