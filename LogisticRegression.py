@@ -18,6 +18,7 @@ class LogisticRegression():
         self.theta = fmin_bfgs(self.cost, theta, fprime=self.gradient, args=(features, labels))
         self.fitted = True
         print('Prediction Model Created.')
+        return self.theta
 
     def predict(self, X):
         if self.fitted:
@@ -32,7 +33,7 @@ class LogisticRegression():
             print('Model has not been fitted. Cannot predict. Aborting.')
 
     def score(self):
-        """Estimated performance score for Learner.""" ##implement cross validation for calculating score??
+        """Estimated performance score for Learner.""" ##only returns how many it got right...
         if self.predicted:
             print('Correctly predicted items: %d/%d.' % (np.sum(self.labels == self.prediction), len(self.labels)))
         else:
