@@ -9,6 +9,7 @@ class LogisticRegression():
         self.fitted = False
         self.predicted = False
         self.theta = None
+        self.prob = None
 
     def fit(self, X, y):
         theta = np.zeros((X.shape[1] + 1, 1))
@@ -24,8 +25,8 @@ class LogisticRegression():
         if self.fitted:
             data = np.ones((X.shape[0], X.shape[1] + 1))
             data[:,1:] = X
-            prob = self.sigmoid(self.theta, data)
-            pred = np.where(prob >= 0.5, 1, 0)
+            self.prob = self.sigmoid(self.theta, data)
+            pred = np.where(self.prob >= 0.5, 1, 0)
             self.prediction = pred
             self.predicted = True
             return self.prediction
