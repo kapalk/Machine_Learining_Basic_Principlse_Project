@@ -8,9 +8,9 @@ import multivariateRidgeRegressor
 
 
 #load data
-trainingDF = pd.read_csv('/Users/kasperipalkama/Downloads/regression_dataset_training.csv')
-testingDF = pd.read_csv('/Users/kasperipalkama/Downloads/regression_dataset_testing.csv')
-solutionDF = pd.read_csv('/Users/kasperipalkama/Downloads/regression_dataset_testing_solution.csv')
+trainingDF = pd.read_csv('regression_dataset_training.csv')
+testingDF = pd.read_csv('regression_dataset_testing.csv')
+solutionDF = pd.read_csv('regression_dataset_testing_solution.csv')
 
 # transform dataframes to numpy arrays, get rid of index column and
 # separates features and targets to different arrays
