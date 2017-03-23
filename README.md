@@ -7,7 +7,7 @@ Under `data/`:
 - all data for training and testing
 
 # Scripts
-- `featureSelection.py`: feature selection for both claasification and regression. For regression, features are selected using cross-correlation. For classification feature selection was performed by implementing the Analysis of Variance to get the proportion of variance explained by the feature to the total variance in the data
+- `featureSelection.py`: feature selection for both classification and regression. For regression, features are selected using cross-correlation. For classification feature selection was performed by implementing the Analysis of Variance to get the proportion of variance explained by the feature to the total variance in the data
 - `multivariateRidgeRegressor.py`: multivariate ridge regression from scratch
 - `regressor_optimization.py`: optimizing predictor and testing it
 - `LogisticRegression.py`: logistic regression from scrach
