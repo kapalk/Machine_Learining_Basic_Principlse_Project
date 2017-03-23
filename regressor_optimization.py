@@ -1,82 +1,105 @@
 import pandas as pd
 import numpy as np
-from sklearn.cross_validation import KFold
+from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error as mse
+from sklearn.linear_model import Ridge
 
 import featureSelection
-import multivariateRidgeRegressor
+import multivariateRidgeRegressor as RR
 
 
-#load data
-trainingDF = pd.read_csv('regression_dataset_training.csv')
-testingDF = pd.read_csv('regression_dataset_testing.csv')
-solutionDF = pd.read_csv('regression_dataset_testing_solution.csv')
+def getData():
+    trainData = np.loadtxt('data/regression_dataset_training.csv',
+                           delimiter = ',',skiprows = 1)[:,1:]
+    testData = np.loadtxt('data/regression_dataset_testing.csv',
+                          delimiter = ',',skiprows = 1)[:,1:]
+    solutionData = np.loadtxt('data/regression_dataset_'\
+                              'testing_solution.csv',delimiter = ',',
+                              skiprows = 1)[:,1:]
+    return trainData, testData, solutionData
 
-# transform dataframes to numpy arrays, get rid of index column and
-# separates features and targets to different arrays
-X_training = np.asarray(trainingDF)[:,1:51]
-y_training = np.asarray(trainingDF)[:,51]
-X_testing = np.asarray(testingDF)[:,1:]
-y_testing = np.asarray(solutionDF)[:,1]
+def getFeaturesAndTargets(M):
+    '''
+    separates features and targets from numpy array
+    '''
+    return M[:,0:M.shape[1]-1], M[:,-1]
 
-validated_error_featSelection = np.empty(50)
-for featureCount in range(1,51):
-    # feauture selelection: how many features taken into account gives the smallest validation error
-    bestFeatureIdxs = featureSelection.forRegression(X_training,y_training,featureCount)
-    X_training_best_selected_features = X_training[:,bestFeatureIdxs]
-    # adds bias term
-    ones = np.ones(len(X_training_best_selected_features))
-    X_training_best_selected_features = np.column_stack((ones,X_training_best_selected_features))
-    
+def kFoldsValidationForRR(featureArr,targetArr,foldCount,alpha=1):
+    """does kfolds cross validation for ridge regression.
+
+    Args:
+        featureArr: A numpy arrays containing features.
+        targetArr: A numpy array containing targets.
+        foldCount: A number of folds
+    Returns:
+        validation error
+    """
     error = 0
-    # cross validation of feature selection
-    foldCount = 10
-    kf = KFold(len(X_training_best_selected_features), n_folds = foldCount)
-    for train_cv, validation_cv in kf:
-        X_train, X_validation = X_training_best_selected_features[train_cv,:], X_training_best_selected_features[validation_cv,:]
-        y_train, y_validate = y_training[train_cv], y_training[validation_cv]
-        # gets optimized theta
-        theta_opt= multivariateRidgeRegressor.fit(X_train,y_train,1)
-        # calculates validation error on each featureCount
-        error += mse(y_validate,X_validation.dot(theta_opt))
-    validated_error_featSelection[featureCount-1] = error/foldCount
+    kf = KFold(n_splits = foldCount)
+    for train_cv, valid_cv in kf.split(featureArr):
+        featTrain,  = featureArr[train_cv,:],
+        featValid = featureArr[valid_cv,:]
+        targTrain, targValid = targetArr[train_cv], targetArr[valid_cv]
+        theta_opt= RR.fit(featTrain,targTrain,alpha)
+        prediction = RR.predict(featValid,theta_opt)
+        error += mse(targValid,prediction)
+    return error/foldCount
 
-k_optimal = 1 + np.argmin(validated_error_featSelection)
-optimalFeatures = featureSelection.forRegression(X_training,y_training,k_optimal)
+def getOptimalFeatures(FeatureArr,TargetArr):
+    """validates features used for learning.
 
-# get training data with chosen features
-X_training_final = X_training[:,optimalFeatures]
-# add bias term
-ones = np.ones(len(X_training_final))
-X_training_final = np.column_stack((ones,X_training_final))
+    Args:
+        FeatureArr: A numpy arrays containing features.
+        TargetArr: A numpy array containing targets.
+    Returns:
+        optimalFeatures: A numpy array of selected features
 
-# cross validation of alpha
-alphas = np.arange(0,5,0.01)
-idx = 0
-validated_error_alpha = np.empty(len(alphas))
-for alpha in alphas:
-    for train_cv, validation_cv in kf:
-        X_train, X_validation = X_training_best_selected_features[train_cv,:], X_training_best_selected_features[validation_cv,:]
-        y_train, y_validate = y_training[train_cv], y_training[validation_cv]
-        # gets optimized theta
-        theta_opt= multivariateRidgeRegressor.fit(X_train,y_train,alpha)
-        # calculates validation error on each alpha
-        error += mse(y_validate,X_validation.dot(theta_opt))
-    validated_error_alpha[idx] = error/foldCount
-    idx += 1
-optimal_alpha = alphas[np.argmin(validated_error_alpha)]
+    """
+    shape = FeatureArr.shape
+    errorMat = np.empty(shape[1])
+    for idx,featureCount in enumerate(range(1,shape[1]+1)):
+        bestFeatureIdxs = featureSelection.forRegression(FeatureArr,
+                                                         TargetArr,
+                                                         featureCount)
+        selectedFeatures = FeatureArr[:,bestFeatureIdxs]
+        errorMat[idx] = kFoldsValidationForRR(selectedFeatures,
+                                        TargetArr,
+                                        foldCount = 5)        
+    optimalFeatCount = np.argmin(errorMat) + 1
+    optimalFeaturesIdxs = featureSelection.forRegression(FeatureArr,
+                                                     TargetArr,
+                                                     optimalFeatCount)
+    return optimalFeaturesIdxs
 
+def getOptimalAlpha(featureArr,targetArr,alphaRange):
+    """validates optimal scaling coefficinet for regulation.
 
-# final predictor
-finalPredictor = multivariateRidgeRegressor.fit(X_training_final,y_training,optimal_alpha)
+    Args:
+        featureArr: A numpy arrays containing features.
+        targetArr: A numpy array containing targets.
+    Returns:
+        OptimalAlpha: An optimal scaling coefficent for regulation
 
-#add bias term
-X_testing = X_testing[:,optimalFeatures]
-ones = np.ones(len(X_testing))
-X_testing = np.column_stack((ones,X_testing))
+    """
+    alphas = np.arange(alphaRange[0],alphaRange[1],0.01)
+    errorMat = np.empty(len(alphas))
+    for idx,alpha in enumerate(alphas):
+        errorMat[idx] = kFoldsValidationForRR(featureArr,
+                                        targetArr,
+                                        foldCount=5,
+                                        alpha=alpha)
+        
+    optimalAlpha = alphas[np.argmin(errorMat)]
+    return optimalAlpha
 
-#test error
-testError = mse(y_testing,X_testing.dot(finalPredictor))
-print('Test error: ',testError)
- 
+if __name__ == '__main__':
+    trainData, testData, solutionData = getData()
+    trainFeatures, trainTargets = getFeaturesAndTargets(trainData)
+    optimalFeaturesIdxs = getOptimalFeatures(trainFeatures,trainTargets)
+    alpha = getOptimalAlpha(trainFeatures[optimalFeaturesIdxs],
+                            trainTargets,alphaRange=[0,5])
+    theta = RR.fit(trainFeatures[:,optimalFeaturesIdxs],trainTargets,alpha)
+    prediction = RR.predict(testData[:,optimalFeaturesIdxs],theta)
+    testError = mse(solutionData,prediction)
+    print(testError)
 
