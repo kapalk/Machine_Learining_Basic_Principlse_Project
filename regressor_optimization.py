@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error as mse
-from sklearn.linear_model import Ridge
 
 import featureSelection
 import multivariateRidgeRegressor as RR
@@ -64,7 +63,7 @@ def getOptimalFeatures(FeatureArr,TargetArr):
         selectedFeatures = FeatureArr[:,bestFeatureIdxs]
         errorMat[idx] = kFoldsValidationForRR(selectedFeatures,
                                         TargetArr,
-                                        foldCount = 5)        
+                                        foldCount = 5)
     optimalFeatCount = np.argmin(errorMat) + 1
     optimalFeaturesIdxs = featureSelection.forRegression(FeatureArr,
                                                      TargetArr,
@@ -88,7 +87,7 @@ def getOptimalAlpha(featureArr,targetArr,alphaRange):
                                         targetArr,
                                         foldCount=5,
                                         alpha=alpha)
-        
+
     optimalAlpha = alphas[np.argmin(errorMat)]
     return optimalAlpha
 
@@ -102,4 +101,3 @@ if __name__ == '__main__':
     prediction = RR.predict(testData[:,optimalFeaturesIdxs],theta)
     testError = mse(solutionData,prediction)
     print(testError)
-
